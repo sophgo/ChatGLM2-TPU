@@ -1,0 +1,6 @@
+/Pow_output_0_Pow F32
+/ReduceMean_output_0_ReduceMean F32
+/Add_output_0_Add F32
+/Sqrt_output_0_Sqrt F32
+/Div_output_0_Div_rcp F32
+/Mul_output_0_Mul F32

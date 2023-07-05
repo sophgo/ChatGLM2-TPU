@@ -1,0 +1,6 @@
+/layer/input_layernorm/Pow_output_0_Pow F32
+/layer/input_layernorm/ReduceMean_output_0_ReduceMean F32
+/layer/input_layernorm/Add_output_0_Add F32
+/layer/input_layernorm/Sqrt_output_0_Sqrt F32
+/layer/input_layernorm/Div_output_0_Div_rcp F32
+/layer/input_layernorm/Mul_output_0_Mul F32
