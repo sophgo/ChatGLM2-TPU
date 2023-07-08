@@ -6,6 +6,10 @@
 
 下文中默认是PCIE环境；如果是SoC环境，按提示操作即可。
 
+在知乎上写了关于`ChatGLM2-6B`的解读，方便大家理解源码：
+
+[ChatGLM2-6B流程解析与TPU-MLIR部署](https://zhuanlan.zhihu.com/p/641975976)
+
 
 ## 开发环境
 
@@ -56,7 +60,7 @@ if attention_mask is not None:
 git clone git@github.com:sophgo/tpu-mlir.git
 cd tpu-mlir
 source ./envsetup.sh
-build
+./build.sh
 ```
 
 4. 下载[sentencepiece](https://github.com/google/sentencepiece)，并编译得到`sentencepiece.a`
