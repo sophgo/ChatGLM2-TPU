@@ -174,25 +174,25 @@ def test_net_with_mask():
     token_len = len(ids)
     ids = ids + (MAX_LEN - token_len) * [0]
     input_ids = torch.tensor(ids).view(MAX_LEN)
-    out = embed(input_ids).view(512, 1, 4096)
-    position_ids = list(range(token_len)) + (512 - token_len) * [0]
+    out = embed(input_ids).view(MAX_LEN, 1, 4096)
+    position_ids = list(range(token_len)) + (MAX_LEN - token_len) * [0]
     position_ids = torch.tensor([position_ids])
-    attention_mask = torch.ones((512, 512))
+    attention_mask = torch.ones((MAX_LEN, MAX_LEN))
     for i in range(token_len):
         for j in range(token_len):
             if j <= i:
                 attention_mask[i][j] = 0
-    attention_mask = attention_mask.view(1, 1, 512, 512).bool()
+    attention_mask = attention_mask.view(1, 1, MAX_LEN, MAX_LEN).bool()
     k_cache = []
     v_cache = []
 
-    for i in range(28):
+    for i in range(num_layers):
         out, kv_cache = blocks[i](out, position_ids, attention_mask)
         k, v = kv_cache
-        k[512 - token_len:] = k[:token_len]
-        v[512 - token_len:] = v[:token_len]
-        k[:512 - token_len] = 0
-        v[:512 - token_len] = 0
+        k[MAX_LEN - token_len:] = k[:token_len]
+        v[MAX_LEN - token_len:] = v[:token_len]
+        k[:MAX_LEN - token_len] = 0
+        v[:MAX_LEN - token_len] = 0
         k_cache.append(k)
         v_cache.append(v)
     out = out[token_len - 1:token_len].view(1, 4096)
@@ -206,14 +206,14 @@ def test_net_with_mask():
         input_ids = torch.tensor([token])
         out = embed(input_ids).view(1, 1, 4096)
         position_ids = torch.tensor([[token_len - 1]])
-        attention_mask = torch.ones((1, 1, 1, 513))
-        attention_mask[:, :, :, 513 - token_len:] = 0
-        for i in range(28):
+        attention_mask = torch.ones((1, 1, 1, MAX_LEN + 1))
+        attention_mask[:, :, :, MAX_LEN + 1 - token_len:] = 0
+        for i in range(num_layers):
             out, k_cache[i], v_cache[i] = block_kvs[i](out, position_ids,
                                                        attention_mask,
                                                        k_cache[i], v_cache[i])
-            k_cache[i][:512 - token_len] = 0
-            v_cache[i][:512 - token_len] = 0
+            k_cache[i][:MAX_LEN - token_len] = 0
+            v_cache[i][:MAX_LEN - token_len] = 0
         token = lm(out).view(1)
         out_ids.append(int(token))
         word = tokenizer._convert_id_to_token(int(token[0]))
@@ -221,7 +221,7 @@ def test_net_with_mask():
     print("\noutput_ids:{}".format(out_ids))
 
 
-# test_net_with_mask()
+test_net_with_mask()
 
 #export models
 for i in range(num_layers):
