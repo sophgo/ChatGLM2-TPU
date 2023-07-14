@@ -221,7 +221,7 @@ def test_net_with_mask():
     print("\noutput_ids:{}".format(out_ids))
 
 
-test_net_with_mask()
+#test_net_with_mask()
 
 #export models
 for i in range(num_layers):

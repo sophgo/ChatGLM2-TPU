@@ -130,6 +130,7 @@ python3 export_onnx.py
 ```shell
 cd chatglm2-tpu/demo
 mkdir build
+cd build
 cmake ..
 make -j
 ```

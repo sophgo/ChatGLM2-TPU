@@ -52,7 +52,6 @@ model_transform.py \
 model_deploy.py \
     --mlir lm_head.mlir \
     --quantize F16 \
-    --quantize_table ../../lm_qtable \
     --chip bm1684x \
     --model lm_head.bmodel
 
@@ -79,7 +78,6 @@ model_transform.py \
 model_deploy.py \
     --mlir glm_block_$i.mlir \
     --quantize F16 \
-    --quantize_table ../../glm_qtable \
     --chip bm1684x \
     --model glm_block_$i.bmodel
 
@@ -92,7 +90,6 @@ model_transform.py \
 model_deploy.py \
     --mlir glm_block_cache_$i.mlir \
     --quantize F16 \
-    --quantize_table ../../glm_qtable \
     --chip bm1684x \
     --model glm_block_cache_$i.bmodel
 
