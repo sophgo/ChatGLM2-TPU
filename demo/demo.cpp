@@ -292,7 +292,7 @@ void ChatGLM2::chat() {
   while (true) {
     std::cout << "\nQuestion: ";
     std::string input_str;
-    std::cin >> input_str;
+    std::getline(std::cin, input_str);
     if (input_str == "exit") {
       break;
     }
