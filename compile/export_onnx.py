@@ -21,6 +21,7 @@ import pdb
 import numpy as np
 
 CHATGLM2_PATH = "/workspace/chatglm2-6b"
+folder = "./tmp"
 
 origin_model = AutoModel.from_pretrained(CHATGLM2_PATH,
                                          trust_remote_code=True).float()
@@ -222,6 +223,10 @@ def test_net_with_mask():
 
 
 #test_net_with_mask()
+
+# create folder to store onnx
+if not os.path.exists(folder):
+    os.makedirs(folder)
 
 #export models
 for i in range(num_layers):

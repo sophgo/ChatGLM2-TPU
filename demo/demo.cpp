@@ -327,13 +327,18 @@ void ChatGLM2::answer(const std::string &input_str) {
     return;
   }
   auto st = std::chrono::system_clock::now();
+  int pre_token = 0;
   int token = forward_first(tokens);
   while (token != EOS && token_length < MAX_LEN) {
+    std::string pre_word;
     std::string word;
-    std::vector<int> ids = {token};
+    std::vector<int> pre_ids = {pre_token};
+    std::vector<int> ids = {pre_token, token};
+    sentencepiece.Decode(pre_ids, &pre_word);
     sentencepiece.Decode(ids, &word);
-    history += word;
-    std::cout << word << std::flush;
+    std::string diff = word.substr(pre_word.size());
+    history += diff;
+    std::cout << diff << std::flush;
     if (token_length < MAX_LEN) {
       token_length++;
     }
@@ -346,7 +351,7 @@ void ChatGLM2::answer(const std::string &input_str) {
   printf("\nspeed: %f token/s\n", tok_num / (duration.count() * 1e-6));
   if (token_length >= MAX_LEN) {
     round = 0;
-    history = "";
+    history = history.substr(history.size()/2);
   } else {
     history += "\n\n";
     round++;
