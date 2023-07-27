@@ -125,7 +125,7 @@ python3 export_onnx.py
 ./compile.sh
 ```
 
-## 编译程序
+## 编译程序(C++版本)
 
 ```shell
 cd chatglm2-tpu/demo
@@ -145,6 +145,23 @@ set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
 
 编译生成chatglm2可执行程序，将`chatglm2`、`chatglm2-6b.bmodel`和`tokenizer.model`拷贝到运行环境就可以执行了。
 (`tokenizer.model`来自`ChatGLM2-6B`)
+
+## 编译程序(Python版本)
+
+```shell
+cd chatglm2-tpu/python_demo
+mkdir build
+cd build
+cmake ..
+make -j
+```
+
+编译成功会生成`ChatGLM2.cpython-37m-x86_64-linux-gnu.so`，之后将chatglm2-6b.bmodel放到python\_demo目录下。
+使用
+```python
+python run.py
+```
+即可成功运行python的demo
 
 
 ## 运行效果
