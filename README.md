@@ -157,7 +157,7 @@ make -j
 ```
 
 编译成功会生成`ChatGLM2.cpython-37m-x86_64-linux-gnu.so`，之后将chatglm2-6b.bmodel放到python\_demo目录下。
-使用
+另外这里也直接给出了so文件，可以直接省略上面的编译这一步。但是必须为python3.7版本
 ```python
 python run.py
 ```
