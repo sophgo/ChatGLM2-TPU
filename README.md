@@ -163,6 +163,22 @@ python run.py
 ```
 即可成功运行python的demo
 
+## 编译程序(Python Web版本)
+
+```shell
+cd chatglm2-tpu/web_demo
+mkdir build
+cd build
+cmake ..
+make -j
+```
+
+编译成功会生成`libtpuchat.so*`，在chat.py中指定bmodel\_path token\_path device\_id。
+```python
+python web_demo.py
+```
+即可成功运行web的demo
+
 
 ## 运行效果
 
