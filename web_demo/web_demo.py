@@ -52,19 +52,17 @@ def parse_text(text):
     return text
 
 
-def gen(input, history):
-    i = 0
-    history.append((input, ''))
-    res = ''
-    while i < 10:
-        i += 1
-        res += str(i)
-        time.sleep(0.05)
-        history[-1] = (input, res)
-        yield res, history
-
-
 def predict(input, chatbot, max_length, top_p, temperature, history):
+    spilt = -1
+    while spilt > -len(history):
+        prompt = ["[Round {}]\n\n问：{}\n\n答：{}\n\n".format(i + 1, x[0], x[1]) for i, x in enumerate(history[spilt:])]
+        if len("".join(prompt)) < 300:
+            spilt -= 1
+        else:
+            spilt += 1
+            break
+    history = history[spilt:]
+    # 对过长的history做截断 
 
     chatbot.append((parse_text(input), ""))
     for response, history in glm.stream_predict(input, history):
