@@ -119,10 +119,18 @@ python3 export_onnx.py
 ```
 此时有大量onnx模型被导出到tmp目录
 
-3. 对onnx模型进行编译，生成bmodel，这个过程会花一些时间，最终生成`chatglm2-6b.bmodel`文件
+3. 对onnx模型进行编译
+
+目前TPU-MLIR支持对ChatGLM2进行F16和INT8量化，默认情况下会进行F16量化，最终生成`chatglm2-6b.bmodel`文件
 
 ```shell
 ./compile.sh
+```
+
+若想进行INT8量化，则执行以下命令，最终生成`chatglm2-6b_int8.bmodel`文件
+
+```shell
+./compile.sh --mode int8
 ```
 
 ## 编译程序(C++版本)
@@ -143,8 +151,13 @@ set(CMAKE_ASM_COMPILER aarch64-linux-gnu-gcc)
 set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
 ```
 
-编译生成chatglm2可执行程序，将`chatglm2`、`chatglm2-6b.bmodel`和`tokenizer.model`拷贝到运行环境就可以执行了。
-(`tokenizer.model`来自`ChatGLM2-6B`)
+编译生成chatglm2可执行程序，将`chatglm2`、`chatglm2-6b.bmodel`(或`chatglm2-6b_int8.bmodel`)和`tokenizer.model`拷贝到运行环境就可以执行了。
+(`tokenizer.model`来自`ChatGLM2-6B`)。
+
+运行`chatglm2`时请指定要运行的bmodel模型，默认情况下使用`chatglm2-6b.bmodel`：
+```shell
+./chatglm2 --model chatglm2-6b_int8.bmodel # 若量化模式为int8时
+```
 
 ## 编译程序(Python版本)
 
@@ -156,8 +169,10 @@ cmake ..
 make -j
 ```
 
-编译成功会生成`ChatGLM2.cpython-37m-x86_64-linux-gnu.so`，之后将chatglm2-6b.bmodel放到python\_demo目录下。
-另外这里也直接给出了so文件，可以直接省略上面的编译这一步。但是必须为python3.7版本
+编译成功会生成`ChatGLM2.cpython-37m-x86_64-linux-gnu.so`，之后将`chatglm2-6b.bmodel`放到python\_demo目录下。
+另外这里也直接给出了so文件，可以直接省略上面的编译这一步 (但是必须为python3.7版本)。
+
+若想采用INT8量化，则需要在编译前将`ChatGLM2.cpp`中的`CHATGLM_MODEL`更改为对应的bmodel名称。
 ```python
 python run.py
 ```
@@ -181,6 +196,8 @@ python web_demo.py
 
 
 ## 运行效果
+
+以下为F16量化模式下的运行效果：
 
 ![](./assets/chatglm2.png)
 

@@ -16,13 +16,13 @@
 #include "memory.h"
 #include "sentencepiece/sentencepiece_processor.h"
 #include "bmruntime_interface.h"
+#include <getopt.h>
 
 static const int NUM_LAYERS = 28;
 static const int MAX_LEN = 512;
 static const int HIDDEN_SIZE = 4096;
 
 static const std::string TOKENIZER_MODEL = "tokenizer.model";
-static const std::string CHATGLM_MODEL = "chatglm2-6b.bmodel";
 
 // #define EXPORT_RESULTS
 #ifdef EXPORT_RESULTS
@@ -44,7 +44,7 @@ static void save_array(std::string filename) {
 
 class ChatGLM2 {
 public:
-  void init(int devid);
+  void init(int devid, std::string model);
   void chat();
   void deinit();
 
@@ -89,9 +89,10 @@ void ChatGLM2::load_sentencepiece() {
   printf("Done!\n");
 }
 
-void ChatGLM2::init(int devid) {
+void ChatGLM2::init(int devid, std::string model) {
   load_sentencepiece();
   // request bm_handle
+  printf("Device [%d] loading ....\n", devid);
   bm_status_t status = bm_dev_request(&bm_handle, devid);
   assert(BM_SUCCESS == status);
 
@@ -100,8 +101,8 @@ void ChatGLM2::init(int devid) {
   assert(NULL != p_bmrt);
 
   // load bmodel by file
-  printf("Model[%s] loading ....\n", CHATGLM_MODEL.c_str());
-  bool ret = bmrt_load_bmodel(p_bmrt, CHATGLM_MODEL.c_str());
+  printf("Model[%s] loading ....\n", model.c_str());
+  bool ret = bmrt_load_bmodel(p_bmrt, model.c_str());
   assert(true == ret);
   printf("Done!\n");
   // net names
@@ -358,16 +359,43 @@ void ChatGLM2::answer(const std::string &input_str) {
   }
 }
 
+void processArguments(int argc, char* argv[], std::string& chatglm_model, int& dev_id) {
+    struct option longOptions[] = {
+        {"model", required_argument, nullptr, 'm'},
+        {"dev_id", required_argument, nullptr, 'd'},
+        {nullptr, 0, nullptr, 0}
+    };
+
+    int optionIndex = 0;
+    int option;
+
+    while ((option = getopt_long(argc, argv, "m:d:", longOptions, &optionIndex)) != -1) {
+        switch (option) {
+            case 'm':
+                chatglm_model = optarg;
+                break;
+            case 'd':
+                dev_id = std::stoi(optarg);
+                break;
+            case '?':
+                exit(EXIT_FAILURE);
+            default:
+                exit(EXIT_FAILURE);
+        }
+    }
+}
+
 int main(int argc, char **argv) {
   // set your bmodel path here
   printf("Demo for ChatGLM2-6B in BM1684X\n");
+  std::string chatglm_model = "chatglm2-6b.bmodel";
   int dev_id = 0;
-  if (argc > 1) {
-    dev_id = atoi(argv[1]);
-  }
+
+  processArguments(argc, argv, chatglm_model, dev_id);
+  
   ChatGLM2 glm;
   printf("Init Environment ...\n");
-  glm.init(dev_id);
+  glm.init(dev_id, chatglm_model);
   printf("==========================\n");
   glm.chat();
   glm.deinit();

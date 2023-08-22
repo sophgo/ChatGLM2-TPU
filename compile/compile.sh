@@ -1,6 +1,33 @@
 #!/bin/bash
 set -ex
 models=
+mode="f16"
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+
+    case $key in
+        --mode)
+            mode="$2"
+            shift 2
+            ;;
+        *)
+            echo "Invalid option: $key" >&2
+            exit 1
+            ;;
+        :)
+            echo "Option -$OPTARG requires an argument." >&2
+            exit 1
+            ;;
+    esac
+done
+if [ $mode == "int8" ]; then
+    extra_args="--w8a16_linear"
+    out_model=chatglm2-6b_$mode.bmodel
+else
+    out_model=chatglm2-6b.bmodel
+    extra_args=""
+fi
 
 outdir=tmp/embedding
 mkdir -p $outdir
@@ -74,24 +101,24 @@ model_transform.py \
     --model_def ../glm_block_$i.onnx \
     --mlir glm_block_$i.mlir
 
-
 model_deploy.py \
     --mlir glm_block_$i.mlir \
     --quantize F16 \
     --chip bm1684x \
-    --model glm_block_$i.bmodel
+    --model glm_block_$i.bmodel \
+    $extra_args
 
 model_transform.py \
     --model_name glm_block_cache_$i \
     --model_def ../glm_block_cache_$i.onnx \
     --mlir glm_block_cache_$i.mlir
 
-
 model_deploy.py \
     --mlir glm_block_cache_$i.mlir \
     --quantize F16 \
     --chip bm1684x \
-    --model glm_block_cache_$i.bmodel
+    --model glm_block_cache_$i.bmodel \
+    $extra_args
 
 models=${models}${outdir}'/glm_block_'$i'.bmodel '$outdir'/glm_block_cache_'$i'.bmodel '
 
@@ -99,4 +126,4 @@ done
 popd
 echo $models
 
-model_tool --combine $models -o chatglm2-6b.bmodel
+model_tool --combine $models -o $out_model
