@@ -1,4 +1,4 @@
-tmp/
+tmp*
 *.bmodel
 build/
 libsophon/

@@ -44,7 +44,7 @@ static void save_array(std::string filename) {
 
 class ChatGLM2 {
 public:
-  void init(int devid, std::string model);
+  void init(const std::vector<int> &devid, std::string model);
   void chat();
   void deinit();
 
@@ -57,6 +57,7 @@ private:
   void load_sentencepiece();
 
 private:
+  std::vector<bm_handle_t> handles;
   bm_handle_t bm_handle;
   void *p_bmrt;
   sentencepiece::SentencePieceProcessor sentencepiece;
@@ -89,15 +90,24 @@ void ChatGLM2::load_sentencepiece() {
   printf("Done!\n");
 }
 
-void ChatGLM2::init(int devid, std::string model) {
+void ChatGLM2::init(const std::vector<int> &devices, std::string model) {
   load_sentencepiece();
   // request bm_handle
-  printf("Device [%d] loading ....\n", devid);
-  bm_status_t status = bm_dev_request(&bm_handle, devid);
-  assert(BM_SUCCESS == status);
-
+  std::cout << "Device [ ";
+  for (auto d : devices) {
+    std::cout << d << " ";
+  }
+  std::cout << "] loading ....\n";
+  int device_num = devices.size();
+  for (auto d : devices) {
+    bm_handle_t h;
+    bm_status_t status = bm_dev_request(&h, d);
+    assert(BM_SUCCESS == status);
+    handles.push_back(h);
+  }
+  bm_handle = handles[0];
   // create bmruntime
-  p_bmrt = bmrt_create(bm_handle);
+  p_bmrt = bmrt_create_ex(handles.data(), device_num);
   assert(NULL != p_bmrt);
 
   // load bmodel by file
@@ -178,7 +188,9 @@ void ChatGLM2::deinit() {
     bm_free_device(bm_handle, past_value[i].device_mem);
   }
   bmrt_destroy(p_bmrt);
-  bm_dev_free(bm_handle);
+  for (auto h : handles) {
+    bm_dev_free(h);
+  }
 }
 
 // after first block, move real result to end of mem
@@ -352,50 +364,73 @@ void ChatGLM2::answer(const std::string &input_str) {
   printf("\nspeed: %f token/s\n", tok_num / (duration.count() * 1e-6));
   if (token_length >= MAX_LEN) {
     round = 0;
-    history = history.substr(history.size()/2);
+    history = history.substr(history.size() / 2);
   } else {
     history += "\n\n";
     round++;
   }
 }
 
-void processArguments(int argc, char* argv[], std::string& chatglm_model, int& dev_id) {
-    struct option longOptions[] = {
-        {"model", required_argument, nullptr, 'm'},
-        {"dev_id", required_argument, nullptr, 'd'},
-        {nullptr, 0, nullptr, 0}
-    };
+static void split(const std::string &s, const std::string &delim,
+                  std::vector<std::string> &ret) {
+  size_t last = 0;
+  size_t index = s.find_first_of(delim, last);
+  while (index != std::string::npos) {
+    ret.push_back(s.substr(last, index - last));
+    last = index + 1;
+    index = s.find_first_of(delim, last);
+  }
+  if (last < s.length()) {
+    ret.push_back(s.substr(last));
+  }
+}
 
-    int optionIndex = 0;
-    int option;
+static std::vector<int> parseCascadeDevices(const std::string &str) {
+  std::vector<int> devices;
+  std::vector<std::string> sub_str;
+  split(str, ",", sub_str);
+  for (auto &s : sub_str) {
+    devices.push_back(std::atoi(s.c_str()));
+  }
+  return devices;
+}
 
-    while ((option = getopt_long(argc, argv, "m:d:", longOptions, &optionIndex)) != -1) {
-        switch (option) {
-            case 'm':
-                chatglm_model = optarg;
-                break;
-            case 'd':
-                dev_id = std::stoi(optarg);
-                break;
-            case '?':
-                exit(EXIT_FAILURE);
-            default:
-                exit(EXIT_FAILURE);
-        }
+void processArguments(int argc, char *argv[], std::string &chatglm_model,
+                      std::vector<int> &devices) {
+  struct option longOptions[] = {{"model", required_argument, nullptr, 'm'},
+                                 {"dev_id", required_argument, nullptr, 'd'},
+                                 {nullptr, 0, nullptr, 0}};
+
+  int optionIndex = 0;
+  int option;
+
+  while ((option = getopt_long(argc, argv, "m:d:", longOptions,
+                               &optionIndex)) != -1) {
+    switch (option) {
+    case 'm':
+      chatglm_model = optarg;
+      break;
+    case 'd':
+      devices = parseCascadeDevices(optarg);
+      break;
+    case '?':
+      exit(EXIT_FAILURE);
+    default:
+      exit(EXIT_FAILURE);
     }
+  }
 }
 
 int main(int argc, char **argv) {
   // set your bmodel path here
   printf("Demo for ChatGLM2-6B in BM1684X\n");
   std::string chatglm_model = "chatglm2-6b.bmodel";
-  int dev_id = 0;
+  std::vector<int> devices = {0};
+  processArguments(argc, argv, chatglm_model, devices);
 
-  processArguments(argc, argv, chatglm_model, dev_id);
-  
   ChatGLM2 glm;
   printf("Init Environment ...\n");
-  glm.init(dev_id, chatglm_model);
+  glm.init(devices, chatglm_model);
   printf("==========================\n");
   glm.chat();
   glm.deinit();

@@ -17,7 +17,7 @@ import random
 import sys
 from transformers import AutoModel, AutoTokenizer
 from tokenization_chatglm import ChatGLMTokenizer
-import pdb
+import os
 import numpy as np
 
 CHATGLM2_PATH = "/workspace/chatglm2-6b"

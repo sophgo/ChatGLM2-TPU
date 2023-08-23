@@ -2,6 +2,10 @@
 set -ex
 models=
 mode="f16"
+num_device=1
+mode_args=""
+device_args=""
+out_model=chatglm2-6b.bmodel
 
 while [[ $# -gt 0 ]]; do
     key="$1"
@@ -9,6 +13,10 @@ while [[ $# -gt 0 ]]; do
     case $key in
         --mode)
             mode="$2"
+            shift 2
+            ;;
+        --num_device)
+            num_device="$2"
             shift 2
             ;;
         *)
@@ -21,12 +29,15 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-if [ $mode == "int8" ]; then
-    extra_args="--w8a16_linear"
+
+if [ x$mode == x"int8" ]; then
+    mode_args="--w8a16_linear"
     out_model=chatglm2-6b_$mode.bmodel
-else
-    out_model=chatglm2-6b.bmodel
-    extra_args=""
+fi
+
+if [ x$num_device != x1 ]; then
+    device_args="--num_device $num_device"
+    out_model='chatglm2-6b_'$mode'_'$num_device'dev.bmodel'
 fi
 
 outdir=tmp/embedding
@@ -66,13 +77,13 @@ popd
 
 echo $models
 
-outdir=tmp/lm_head
+outdir=tmp/$mode"_"$num_device"dev"/lm_head
 mkdir -p $outdir
 pushd $outdir
 
 model_transform.py \
     --model_name lm_head \
-    --model_def ../lm_head.onnx \
+    --model_def ../../lm_head.onnx \
     --mlir lm_head.mlir
 
 
@@ -80,6 +91,7 @@ model_deploy.py \
     --mlir lm_head.mlir \
     --quantize F16 \
     --chip bm1684x \
+    $device_args \
     --model lm_head.bmodel
 
 models=${models}${outdir}'/lm_head.bmodel '
@@ -87,7 +99,7 @@ popd
 
 echo $models
 
-outdir=tmp/glm_block
+outdir=tmp/$mode"_"$num_device"dev"/glm_block
 mkdir -p $outdir
 
 pushd $outdir
@@ -98,27 +110,29 @@ do
 
 model_transform.py \
     --model_name glm_block_$i \
-    --model_def ../glm_block_$i.onnx \
+    --model_def ../../glm_block_$i.onnx \
     --mlir glm_block_$i.mlir
 
 model_deploy.py \
     --mlir glm_block_$i.mlir \
     --quantize F16 \
     --chip bm1684x \
-    --model glm_block_$i.bmodel \
-    $extra_args
+    $mode_args \
+    $device_args \
+    --model glm_block_$i.bmodel
 
 model_transform.py \
     --model_name glm_block_cache_$i \
-    --model_def ../glm_block_cache_$i.onnx \
+    --model_def ../../glm_block_cache_$i.onnx \
     --mlir glm_block_cache_$i.mlir
 
 model_deploy.py \
     --mlir glm_block_cache_$i.mlir \
     --quantize F16 \
     --chip bm1684x \
-    --model glm_block_cache_$i.bmodel \
-    $extra_args
+    $mode_args \
+    $device_args \
+    --model glm_block_cache_$i.bmodel
 
 models=${models}${outdir}'/glm_block_'$i'.bmodel '$outdir'/glm_block_cache_'$i'.bmodel '
 

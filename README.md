@@ -121,7 +121,7 @@ python3 export_onnx.py
 
 3. 对onnx模型进行编译
 
-目前TPU-MLIR支持对ChatGLM2进行F16和INT8量化，默认情况下会进行F16量化，最终生成`chatglm2-6b.bmodel`文件
+目前TPU-MLIR支持对ChatGLM2进行F16和INT8量化，且支持多芯分布式推理，默认情况下会进行F16量化和单芯推理，最终生成`chatglm2-6b.bmodel`文件
 
 ```shell
 ./compile.sh
@@ -131,6 +131,12 @@ python3 export_onnx.py
 
 ```shell
 ./compile.sh --mode int8
+```
+
+若想进行2芯推理，则执行一下命令，最终生成`chatglm2-6b_f16_2dev.bmodel`文件
+
+```shell
+./compile.sh --num_device 2
 ```
 
 ## 编译程序(C++版本)
@@ -151,12 +157,22 @@ set(CMAKE_ASM_COMPILER aarch64-linux-gnu-gcc)
 set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
 ```
 
-编译生成chatglm2可执行程序，将`chatglm2`、`chatglm2-6b.bmodel`(或`chatglm2-6b_int8.bmodel`)和`tokenizer.model`拷贝到运行环境就可以执行了。
+编译生成chatglm2可执行程序，将`chatglm2`、`chatglm2-6b?.bmodel`和`tokenizer.model`拷贝到运行环境就可以执行了。
 (`tokenizer.model`来自`ChatGLM2-6B`)。
 
-运行`chatglm2`时请指定要运行的bmodel模型，默认情况下使用`chatglm2-6b.bmodel`：
+运行`chatglm2`，默认单芯运行`chatglm2-6b.bmodel`:
 ```shell
-./chatglm2 --model chatglm2-6b_int8.bmodel # 若量化模式为int8时
+./chatglm2
+```
+
+如果是要运行int8模型，则命令如下：
+```shell
+./chatglm2 --model chatglm2-6b_int8.bmodel
+```
+
+如果是2芯分布式推理，使用如下命令(比如指定在2号和3号芯片上运行, 用`bm-smi`查询芯片id号)：
+```shell
+./chatglm2 --model chatglm2-6b_f16_2dev.bmodel --dev_id 2,3
 ```
 
 ## 编译程序(Python版本)
