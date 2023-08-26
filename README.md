@@ -213,7 +213,7 @@ python web_demo.py
 
 ## 运行效果
 
-以下为F16量化模式下的运行效果：
+以下为单芯片下INT8量化模式的运行效果：
 
 ![](./assets/chatglm2.png)
 
