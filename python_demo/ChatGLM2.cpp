@@ -204,10 +204,14 @@ void ChatGLM2::move2end(const bm_tensor_t &kv) {
 }
 
 int ChatGLM2::forward_first(std::vector<int> &tokens) {
-  int input_ids[MAX_LEN] = {64790, 64792}; // start token
-  int position_id[MAX_LEN] = {0};
-  float attention_mask[MAX_LEN * MAX_LEN] = {0};
-  std::copy(tokens.begin(), tokens.end(), input_ids + 2);
+  std::vector<int> input_ids(MAX_LEN, 0);
+  std::vector<int> position_id(MAX_LEN, 0);
+  std::vector<float> attention_mask(MAX_LEN * MAX_LEN, 0);
+
+  input_ids[0] = 64790;
+  input_ids[1] = 64792;
+  std::copy(tokens.begin(), tokens.end(), input_ids.data() + 2);
+
   token_length = tokens.size() + 2;
   for (int i = 0; i < token_length; i++) {
     position_id[i] = i;
@@ -222,7 +226,7 @@ int ChatGLM2::forward_first(std::vector<int> &tokens) {
   }
 
   // forward embeding
-  bm_memcpy_s2d(bm_handle, inputs_embed_512.device_mem, (void *)input_ids);
+  bm_memcpy_s2d(bm_handle, inputs_embed_512.device_mem, (void *)input_ids.data());
   auto ret =
       bmrt_launch_tensor_ex(p_bmrt, name_embed.c_str(), &inputs_embed_512, 1,
                             &outputs_embed_512, 1, true, false);
@@ -230,8 +234,8 @@ int ChatGLM2::forward_first(std::vector<int> &tokens) {
   bm_thread_sync(bm_handle);
 
   // forward blocks
-  bm_memcpy_s2d(bm_handle, inputs_pid.device_mem, (void *)position_id);
-  bm_memcpy_s2d(bm_handle, inputs_attention.device_mem, (void *)attention_mask);
+  bm_memcpy_s2d(bm_handle, inputs_pid.device_mem, (void *)position_id.data());
+  bm_memcpy_s2d(bm_handle, inputs_attention.device_mem, (void *)attention_mask.data());
   auto inputs_embed = outputs_embed_512;
   inputs_embed.shape = net_blocks[0]->stages[0].input_shapes[0];
   bm_tensor_t inputs_block[3] = {inputs_embed, inputs_pid, inputs_attention};
@@ -257,7 +261,7 @@ int ChatGLM2::forward_first(std::vector<int> &tokens) {
 }
 
 int ChatGLM2::forward_next() {
-  float attention_mask[MAX_LEN + 1] = {0};
+  std::vector<float> attention_mask(MAX_LEN + 1, 0);
   for (int i = 0; i <= MAX_LEN - token_length; i++) {
     attention_mask[i] = 1.0;
   }
@@ -269,7 +273,7 @@ int ChatGLM2::forward_next() {
   assert(ret);
   bm_thread_sync(bm_handle);
   // blocks
-  bm_memcpy_s2d(bm_handle, next_attention.device_mem, (void *)attention_mask);
+  bm_memcpy_s2d(bm_handle, next_attention.device_mem, (void *)attention_mask.data());
   bm_memcpy_s2d(bm_handle, next_pid.device_mem, (void *)&position_id);
   auto inputs_embed = inputs_lm;
   inputs_embed.shape = net_blocks_cache[0]->stages[0].input_shapes[0];
