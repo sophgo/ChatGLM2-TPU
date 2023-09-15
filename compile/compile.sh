@@ -30,9 +30,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [ x$mode == x"int8" ]; then
-    mode_args="--w8a16_linear"
-    out_model=chatglm2-6b_$mode.bmodel
+if [ x$mode == x"int8" ] || [ x$mode == x"int4" ]; then
+    if [ x$mode == x"int8" ]; then
+        mode_args="--linear_quant_mode W8A16"
+    else
+        mode_args="--linear_quant_mode W4A16"
+    fi
+    out_model="chatglm2-6b_$mode.bmodel"
 fi
 
 if [ x$num_device != x1 ]; then

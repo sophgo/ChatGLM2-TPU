@@ -121,19 +121,19 @@ python3 export_onnx.py
 
 3. 对onnx模型进行编译
 
-目前TPU-MLIR支持对ChatGLM2进行F16和INT8量化，且支持多芯分布式推理，默认情况下会进行F16量化和单芯推理，最终生成`chatglm2-6b.bmodel`文件
+目前TPU-MLIR支持对ChatGLM2进行F16, INT8和INT4量化，且支持多芯分布式推理，默认情况下会进行F16量化和单芯推理，最终生成`chatglm2-6b.bmodel`文件
 
 ```shell
 ./compile.sh
 ```
 
-若想进行INT8量化，则执行以下命令，最终生成`chatglm2-6b_int8.bmodel`文件
+若想进行INT8或INT4量化，则执行以下命令，最终生成`chatglm2-6b_int8.bmodel`或`chatglm2-6b_int4.bmodel`文件
 
 ```shell
-./compile.sh --mode int8
+./compile.sh --mode int8 # or int4
 ```
 
-若想进行2芯推理，则执行一下命令，最终生成`chatglm2-6b_f16_2dev.bmodel`文件
+若想进行2芯推理，则执行以下命令，最终生成`chatglm2-6b_f16_2dev.bmodel`文件
 
 ```shell
 ./compile.sh --num_device 2
@@ -149,7 +149,7 @@ cmake ..
 make -j
 ```
 
-如果是SoC环境，则将CMakeLists.txt中加入，并将SoC版本的`libsentencepiece.a`替换过来：
+如果是SoC环境，则在CMakeLists.txt中加入以下代码，并将SoC版本的`libsentencepiece.a`替换过来：
 
 ```cmake
 set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
@@ -165,9 +165,9 @@ set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
 ./chatglm2
 ```
 
-如果是要运行int8模型，则命令如下：
+如果是要运行INT8或INT4模型，则命令如下：
 ```shell
-./chatglm2 --model chatglm2-6b_int8.bmodel
+./chatglm2 --model chatglm2-6b_int8.bmodel # same with int4
 ```
 
 如果是2芯分布式推理，使用如下命令(比如指定在2号和3号芯片上运行, 用`bm-smi`查询芯片id号)：
@@ -188,11 +188,19 @@ make -j
 编译成功会生成`ChatGLM2.cpython-37m-x86_64-linux-gnu.so`，之后将`chatglm2-6b.bmodel`放到python\_demo目录下。
 另外这里也直接给出了so文件，可以直接省略上面的编译这一步 (但是必须为python3.7版本)。
 
-若想采用INT8量化，则需要在编译前将`ChatGLM2.cpp`中的`CHATGLM_MODEL`更改为对应的bmodel名称。
+若想采用INT8或INT4量化，则需要在编译前将`ChatGLM2.cpp`中的`CHATGLM_MODEL`更改为对应的bmodel名称。
 ```python
 python run.py
 ```
-即可成功运行python的demo
+即可成功运行python的demo。
+
+如果是SoC环境，则在CMakeLists.txt中加入以下代码，并将SoC版本的`libsentencepiece.a`替换过来：
+
+```cmake
+set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+set(CMAKE_ASM_COMPILER aarch64-linux-gnu-gcc)
+set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
+```
 
 ## 编译程序(Python Web版本)
 
@@ -208,7 +216,15 @@ make -j
 ```python
 python web_demo.py
 ```
-即可成功运行web的demo
+即可成功运行web的demo。
+
+如果是SoC环境，则在CMakeLists.txt中加入以下代码，并将SoC版本的`libsentencepiece.a`替换过来：
+
+```cmake
+set(CMAKE_C_COMPILER aarch64-linux-gnu-gcc)
+set(CMAKE_ASM_COMPILER aarch64-linux-gnu-gcc)
+set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
+```
 
 
 ## 运行效果
