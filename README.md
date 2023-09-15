@@ -36,9 +36,10 @@ apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 git lfs install
 git clone git@hf.co:THUDM/chatglm2-6b
 ```
-并对该工程做两点修改，
-一是将`config.json`文件中`seq_length`配置为512；
-二是将`modeling_chatglm.py`文件中的如下代码：
+并对该工程做三点修改：
+- 将`config.json`文件中`seq_length`配置为512；
+
+- 将`modeling_chatglm.py`文件中的如下代码：
 
 ```python
 if attention_mask is not None:
@@ -53,6 +54,20 @@ if attention_mask is not None:
 ```
 
 这样修改可以提升效率，使用`masked_fill`效率低下；另一方面`masked_fill`转ONNX存在些bug。
+
+- 将`modeling_chatglm.py`文件中的如下代码：
+
+```python
+pytorch_major_version = int(torch.__version__.split('.')[0])
+if pytorch_major_version >= 2:
+```
+
+修改为：
+
+```python
+pytorch_major_version = int(torch.__version__.split('.')[0])
+if False:
+```
 
 3. 下载`TPU-MLIR`代码并编译，(也可以直接下载编译好的release包解压)
 
@@ -117,7 +132,9 @@ export PYTHONPATH=/workspace/chatglm2-6b:$PYTHONPATH
 cd chatglm2-tpu/compile
 python3 export_onnx.py
 ```
-此时有大量onnx模型被导出到tmp目录
+此时有大量onnx模型被导出到tmp目录。
+
+注意：最新版的镜像python版本为3.10，可能会导致某些算子导出失败，如果遇到问题请自行安装python3.7版本。
 
 3. 对onnx模型进行编译
 
