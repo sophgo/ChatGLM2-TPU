@@ -134,8 +134,6 @@ python3 export_onnx.py
 ```
 此时有大量onnx模型被导出到tmp目录。
 
-注意：最新版的镜像python版本为3.10，可能会导致某些算子导出失败，如果遇到问题请自行安装python3.7版本。
-
 3. 对onnx模型进行编译
 
 目前TPU-MLIR支持对ChatGLM2进行F16, INT8和INT4量化，且支持多芯分布式推理，默认情况下会进行F16量化和单芯推理，最终生成`chatglm2-6b.bmodel`文件

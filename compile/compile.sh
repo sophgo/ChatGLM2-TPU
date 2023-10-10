@@ -3,7 +3,7 @@ set -ex
 models=
 mode="f16"
 num_device=1
-mode_args=""
+quantize_args="--quantize F16"
 device_args=""
 out_model=chatglm2-6b.bmodel
 
@@ -32,9 +32,9 @@ done
 
 if [ x$mode == x"int8" ] || [ x$mode == x"int4" ]; then
     if [ x$mode == x"int8" ]; then
-        mode_args="--linear_quant_mode W8A16"
+        quantize_args="--quantize W8F16"
     else
-        mode_args="--linear_quant_mode W4A16"
+        quantize_args="--quantize W4F16"
     fi
     out_model="chatglm2-6b_$mode.bmodel"
 fi
@@ -90,7 +90,6 @@ model_transform.py \
     --model_def ../../lm_head.onnx \
     --mlir lm_head.mlir
 
-
 model_deploy.py \
     --mlir lm_head.mlir \
     --quantize F16 \
@@ -119,9 +118,8 @@ model_transform.py \
 
 model_deploy.py \
     --mlir glm_block_$i.mlir \
-    --quantize F16 \
+    $quantize_args \
     --chip bm1684x \
-    $mode_args \
     $device_args \
     --model glm_block_$i.bmodel
 
@@ -132,9 +130,8 @@ model_transform.py \
 
 model_deploy.py \
     --mlir glm_block_cache_$i.mlir \
-    --quantize F16 \
+    $quantize_args \
     --chip bm1684x \
-    $mode_args \
     $device_args \
     --model glm_block_cache_$i.bmodel
 
